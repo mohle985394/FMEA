@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#102b2b" />
+    <title>FMEA Studio | 智能失效模式分析</title>
+    <link rel="stylesheet" href="styles.css?v=20260806-3" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">F</div>
+          <div>
+            <div class="brand-name">FMEA Studio</div>
+            <div class="brand-subtitle">Failure analysis workspace</div>
+          </div>
+        </div>
+
+        <nav class="nav-list" aria-label="主导航">
+          <button class="nav-item active" type="button" data-view="analysis"><span class="nav-icon">▦</span>分析工作台</button>
+          <button class="nav-item" type="button" data-view="knowledge"><span class="nav-icon">◈</span>项目知识库 <span id="navKbCount" class="nav-count">0</span></button>
+          <button class="nav-item" type="button" disabled title="即将支持"><span class="nav-icon">⌁</span>分析历史</button>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="standard-badge"><span class="status-dot"></span><div><strong>IEC 60812</strong><small>规则集已加载</small></div></div>
+          <div class="user-chip"><div class="avatar">G</div><div><strong>安全工程师</strong><small>本地工作区</small></div><span class="more">•••</span></div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <div id="analysisView" class="app-view">
+        <header class="topbar">
+          <div>
+            <div class="eyebrow">ANALYSIS WORKSPACE <span class="live-pill"><i></i>本地规则引擎</span></div>
+            <h1>FMEA 安全分析</h1>
+            <p class="topbar-copy">从系统或软件元素出发，快速构建可追溯的失效分析草稿。</p>
+          </div>
+          <div class="top-actions">
+            <input id="analysisImportFile" type="file" accept="application/json,.json,text/csv,.csv" hidden />
+            <button id="analysisImportBtn" class="ghost-btn" type="button"><span>⇧</span> 批量导入元素</button>
+            <button id="resetBtn" class="ghost-btn" type="button"><span>↺</span> 新建分析</button>
+            <button id="exportBtn" class="outline-btn" type="button" disabled><span>⇩</span> 导出 CSV</button>
+          </div>
+        </header>
+
+        <section class="workspace-grid">
+          <section class="input-panel panel-section">
+            <div class="section-heading">
+              <div><span class="section-kicker">01 / CONTEXT</span><h2>定义分析对象</h2></div>
+              <span class="required-note">* 必填</span>
+            </div>
+
+            <div class="sample-row"><span>快速开始</span><button class="sample-btn" type="button" data-sample="software">软件示例 · 车速计算模块</button><button class="sample-btn" type="button" data-sample="system">系统示例 · 电池管理系统</button><span class="sample-hint">批量导入支持 JSON / CSV</span></div>
+
+            <section id="analysisQueuePanel" class="analysis-queue hidden" aria-label="待分析元素队列">
+              <div class="analysis-queue-head"><div><span class="section-kicker">IMPORT QUEUE</span><strong>待分析元素 <span id="analysisQueueCount">0</span></strong></div><div class="queue-actions"><button id="analysisQueueClear" class="text-btn" type="button">清空队列</button></div></div>
+              <div id="analysisQueueList" class="analysis-queue-list"></div>
+              <p class="queue-hint">选择“载入”后可复用当前表单上下文，再生成对应的 FMEA 分析。</p>
+            </section>
+
+            <form id="fmeaForm">
+              <label class="field-label" for="elementName">系统 / 软件元素 <span>*</span></label>
+              <input id="elementName" name="elementName" type="text" placeholder="例如：车速计算模块" required />
+
+              <div class="two-col">
+                <div><label class="field-label" for="elementType">元素类型</label><select id="elementType" name="elementType"><option value="software">软件元素</option><option value="system">系统元素</option><option value="hardware">硬件组件</option></select></div>
+                <div><label class="field-label" for="standard">分析标准</label><select id="standard" name="standard"><option>IEC 60812</option><option>AIAG / VDA</option><option>ISO 26262</option></select></div>
+              </div>
+
+              <label class="field-label" for="function">主要功能 <span>*</span></label>
+              <textarea id="function" name="function" rows="2" placeholder="描述元素应完成的功能，例如：基于轮速信号计算车辆当前速度"></textarea>
+
+              <div class="two-col">
+                <div><label class="field-label" for="inputs">输入 / 依赖</label><textarea id="inputs" name="inputs" rows="3" placeholder="轮速信号、时间戳、标定参数"></textarea></div>
+                <div><label class="field-label" for="outputs">输出 / 接口</label><textarea id="outputs" name="outputs" rows="3" placeholder="车辆速度、有效性状态"></textarea></div>
+              </div>
+
+              <label class="field-label" for="modes">运行模式</label>
+              <input id="modes" name="modes" type="text" placeholder="正常、启动、降级、关闭" />
+
+              <label class="field-label" for="safetyGoal">安全目标 / 关键约束</label>
+              <textarea id="safetyGoal" name="safetyGoal" rows="2" placeholder="例如：避免向上层提供错误的车辆速度"></textarea>
+
+              <div class="form-footer"><div class="confidence-note"><span class="info-icon">i</span><span>结果为工程草稿，最终评分与措施需由专家确认。</span></div><button class="primary-btn" type="submit" id="generateBtn"><span class="spark">✦</span> 生成 FMEA 分析</button></div>
+            </form>
+          </section>
+
+          <section class="results-panel panel-section" aria-live="polite">
+            <div id="emptyState" class="empty-state">
+              <div class="empty-orbit"><span>F</span><i></i><i></i><i></i></div>
+              <h2>等待分析对象</h2>
+              <p>输入一个系统或软件元素，Agent 将按失效引导词逐步生成 FMEA 结果。</p>
+              <div class="empty-steps"><span><b>1</b>补全上下文</span><span><b>2</b>展开失效模式</span><span><b>3</b>审核安全措施</span></div>
+            </div>
+
+            <div id="loadingState" class="loading-state hidden">
+              <div class="loader-ring"></div><h2 id="loadingTitle">正在准备分析</h2><p id="loadingText">检查输入上下文...</p><div class="progress-track"><div id="progressBar"></div></div><div id="stepList" class="step-list"></div>
+            </div>
+
+            <div id="resultState" class="result-state hidden">
+              <div class="result-header"><div><span class="section-kicker">ANALYSIS RESULT</span><h2 id="resultTitle">车速计算模块</h2><div class="result-meta"><span id="resultType">软件元素</span><span>·</span><span id="resultStandard">IEC 60812</span><span>·</span><span id="resultTime">刚刚生成</span></div></div><div class="result-status"><span class="status-dot"></span>草稿 · 待审核</div></div>
+              <div class="metric-strip"><div class="metric"><span>分析功能</span><strong id="metricFunctions">1</strong></div><div class="metric"><span>失效模式</span><strong id="metricModes">0</strong></div><div class="metric"><span>高风险项</span><strong id="metricHigh">0</strong></div><div class="metric"><span>平均 RPN</span><strong id="metricRpn">0</strong></div></div>
+              <div class="tabs"><button class="tab active" data-tab="table" type="button">FMEA 表格 <span id="tableCount">0</span></button><button class="tab" data-tab="overview" type="button">风险概览</button><button class="tab" data-tab="basis" type="button">分析依据</button></div>
+
+              <div id="tableTab" class="tab-panel"><div class="table-toolbar"><div id="analysisCoverageText" class="toolbar-caption"><span class="filter-icon">≡</span> 已应用 8 个适用失效引导词</div><button id="copyBtn" class="mini-btn" type="button"><span>□</span> 复制 JSON</button></div><div class="table-wrap"><table><thead><tr><th class="col-id">ID</th><th class="col-mode">潜在失效模式</th><th class="col-cause">潜在失效原因</th><th class="col-effect">潜在失效影响</th><th class="col-control">安全措施 / 机制</th><th class="col-score">S</th><th class="col-score">O</th><th class="col-score">D</th><th class="col-rpn">RPN</th><th>状态</th></tr></thead><tbody id="fmeaBody"></tbody></table></div></div>
+              <div id="overviewTab" class="tab-panel hidden"><div class="overview-grid"><div class="overview-block"><div class="overview-title"><span class="section-kicker">RISK DISTRIBUTION</span><h3>风险分布</h3></div><div id="riskBars" class="risk-bars"></div></div><div class="overview-block"><div class="overview-title"><span class="section-kicker">COVERAGE</span><h3>安全机制覆盖</h3></div><div class="coverage-score"><strong id="coverageValue">0%</strong><span>失效原因已关联至少一项控制措施</span></div><div class="coverage-track"><div id="coverageBar"></div></div><div id="coverageHint" class="muted-text"></div></div></div><div class="high-risk-list"><div class="overview-title"><span class="section-kicker">ATTENTION</span><h3>优先关注</h3></div><div id="highRiskList"></div></div></div>
+              <div id="basisTab" class="tab-panel hidden"><div class="basis-grid"><div><span class="section-kicker">CONTEXT SNAPSHOT</span><h3>输入上下文</h3><dl id="contextList"></dl></div><div><span class="section-kicker">ASSUMPTIONS</span><h3>分析假设与提醒</h3><ul id="assumptionList" class="assumption-list"></ul></div></div></div>
+            </div>
+          </section>
+        </section>
+        <footer class="page-footer"><span>FMEA Studio · 本地原型</span><span>模型输出仅供工程分析辅助，不替代正式安全评审</span></footer>
+        </div>
+
+        <div id="knowledgeView" class="app-view hidden">
+          <header class="topbar knowledge-topbar">
+            <div>
+              <div class="eyebrow">PROJECT KNOWLEDGE <span class="live-pill"><i></i>浏览器本地存储</span></div>
+              <h1>项目知识库</h1>
+              <p class="topbar-copy">沉淀已评审的历史 FMEA，在新分析中复用可靠的原因、影响和安全措施。</p>
+            </div>
+            <div class="top-actions">
+              <input id="kbImportFile" type="file" accept="application/json,.json,text/csv,.csv" hidden />
+              <button id="kbImportBtn" class="ghost-btn" type="button"><span>⇧</span> 批量导入 FMEA</button>
+              <button id="kbExportBtn" class="outline-btn" type="button"><span>⇩</span> 导出知识库</button>
+            </div>
+          </header>
+
+          <section class="knowledge-page">
+            <div class="kb-stat-strip">
+              <div><span>历史记录</span><strong id="kbTotal">0</strong></div>
+              <div><span>已审核</span><strong id="kbApproved">0</strong></div>
+              <div><span>软件元素</span><strong id="kbSoftware">0</strong></div>
+              <div><span>系统 / 硬件</span><strong id="kbSystem">0</strong></div>
+            </div>
+
+            <div class="knowledge-grid">
+              <section class="kb-editor panel-section">
+                <div class="section-heading">
+                  <div><span class="section-kicker">KNOWLEDGE ENTRY</span><h2 id="kbFormTitle">录入历史 FMEA</h2></div>
+                  <button id="kbCancelEdit" class="text-btn hidden" type="button">取消编辑</button>
+                </div>
+                <form id="kbForm">
+                  <input id="kbRecordId" name="id" type="hidden" />
+                  <label class="field-label" for="kbTitle">记录标题 <span>*</span></label>
+                  <input id="kbTitle" name="title" type="text" placeholder="例如：车速信号陈旧检测最佳实践" required />
+                  <div class="two-col">
+                    <div><label class="field-label" for="kbProject">来源项目</label><input id="kbProject" name="project" type="text" placeholder="平台或项目名称" /></div>
+                    <div><label class="field-label" for="kbElementType">元素类型</label><select id="kbElementType" name="elementType"><option value="software">软件元素</option><option value="system">系统元素</option><option value="hardware">硬件组件</option></select></div>
+                  </div>
+                  <label class="field-label" for="kbElement">元素名称 <span>*</span></label>
+                  <input id="kbElement" name="element" type="text" placeholder="例如：车速计算模块" required />
+                  <label class="field-label" for="kbFunction">功能描述</label>
+                  <textarea id="kbFunction" name="function" rows="2" placeholder="该元素承担的功能及边界"></textarea>
+                  <label class="field-label" for="kbFailureMode">潜在失效模式 <span>*</span></label>
+                  <textarea id="kbFailureMode" name="failureMode" rows="2" placeholder="例如：数据陈旧，车辆速度未按周期更新" required></textarea>
+                  <label class="field-label" for="kbCause">潜在失效原因</label>
+                  <textarea id="kbCause" name="cause" rows="2" placeholder="经过评审确认的原因"></textarea>
+                  <label class="field-label" for="kbEffect">潜在失效影响</label>
+                  <textarea id="kbEffect" name="effect" rows="2" placeholder="局部影响、上层影响或最终影响"></textarea>
+                  <label class="field-label" for="kbControl">安全措施 / 机制 <span>*</span></label>
+                  <textarea id="kbControl" name="control" rows="2" placeholder="预防、检测、容错和故障响应措施" required></textarea>
+                  <div class="score-fields">
+                    <div><label class="field-label" for="kbS">S</label><input id="kbS" name="s" type="number" min="1" max="10" value="7" /></div>
+                    <div><label class="field-label" for="kbO">O</label><input id="kbO" name="o" type="number" min="1" max="10" value="3" /></div>
+                    <div><label class="field-label" for="kbD">D</label><input id="kbD" name="d" type="number" min="1" max="10" value="4" /></div>
+                    <div><label class="field-label" for="kbStatus">审核状态</label><select id="kbStatus" name="reviewStatus"><option value="approved">已审核</option><option value="draft">草稿</option></select></div>
+                  </div>
+                  <div class="two-col">
+                    <div><label class="field-label" for="kbTags">标签</label><input id="kbTags" name="tags" type="text" placeholder="诊断, 时序, 通信" /></div>
+                    <div><label class="field-label" for="kbSource">依据 / 来源</label><input id="kbSource" name="source" type="text" placeholder="评审纪要、需求 ID、报告版本" /></div>
+                  </div>
+                  <div class="form-footer"><div class="confidence-note"><span class="info-icon">i</span><span>只有“已审核”记录会被新分析自动匹配和复用。</span></div><button class="primary-btn" type="submit"><span>＋</span> <span id="kbSubmitText">加入知识库</span></button></div>
+                </form>
+              </section>
+
+              <section class="kb-library panel-section">
+                <div class="kb-library-head">
+                  <div><span class="section-kicker">CURATED FMEA</span><h2>历史 FMEA 记录</h2></div>
+                  <span id="kbSaveState" class="save-state"><i></i>已保存</span>
+                </div>
+                <div class="kb-filters">
+                  <div class="search-box"><span>⌕</span><input id="kbSearch" type="search" placeholder="搜索元素、失效模式、措施或标签" /></div>
+                  <select id="kbTypeFilter" aria-label="按元素类型筛选"><option value="all">全部类型</option><option value="software">软件元素</option><option value="system">系统元素</option><option value="hardware">硬件组件</option></select>
+                  <select id="kbStatusFilter" aria-label="按审核状态筛选"><option value="all">全部状态</option><option value="approved">已审核</option><option value="draft">草稿</option></select>
+                </div>
+                <div id="kbList" class="kb-list"></div>
+                <div id="kbEmpty" class="kb-empty hidden"><div>◈</div><h3>没有匹配的记录</h3><p>调整筛选条件，或在左侧录入一条历史 FMEA。</p></div>
+              </section>
+            </div>
+          </section>
+          <footer class="page-footer"><span>知识库数据保存在当前浏览器</span><span>建议定期导出 JSON 进行项目级备份</span></footer>
+        </div>
+      </main>
+    </div>
+    <script src="app.js?v=20260806-3"></script>
+  </body>
+</html>

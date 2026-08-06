@@ -1,0 +1,24 @@
+{
+  "elements": [
+    {
+      "elementName": "转向角度估算模块",
+      "elementType": "software",
+      "standard": "ISO 26262",
+      "function": "根据传感器信号估算转向角度",
+      "inputs": "方向盘角度、车速",
+      "outputs": "估算转向角度",
+      "modes": "正常、降级",
+      "safetyGoal": "避免输出不可信角度"
+    },
+    {
+      "elementName": "高压配电盒",
+      "elementType": "hardware",
+      "standard": "IEC 60812",
+      "function": "分配并切断高压电源",
+      "inputs": "电池电压、接触器命令",
+      "outputs": "高压母线状态",
+      "modes": "上电、断电",
+      "safetyGoal": "故障时断开高压回路"
+    }
+  ]
+}
