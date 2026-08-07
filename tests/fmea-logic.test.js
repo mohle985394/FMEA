@@ -112,6 +112,10 @@ for (const elementName of ['猴子', '香蕉', '火车制动控制器']) {
 assert.equal(context.fmeaApi.validateAutomotiveContext({ elementName: '通用数据处理模块', function: '处理输入并输出结果' }).inScope, false);
 assert.equal(context.fmeaApi.validateAutomotiveContext(baseData).inScope, true);
 assert.equal(context.fmeaApi.validateAutomotiveContext({ elementName: 'BMS', function: '监控电池包 SOC 并控制车载高压接触器' }).inScope, true);
+for (const elementName of ['感知模块', '规划模块', '控制模块', '地图模块', '定位模块', 'Perception Module', 'Planning Module', 'Localization Module']) {
+  assert.equal(context.fmeaApi.validateAutomotiveContext({ elementName, function: '处理输入并输出结果' }).inScope, true, `${elementName} 应识别为智驾模块`);
+}
+assert.equal(context.fmeaApi.validateAutomotiveContext({ elementName: '工业控制模块', function: '控制生产线设备' }).inScope, false);
 
 const mixedScopeBatch = context.fmeaApi.analyzeElements([
   baseData,
@@ -120,5 +124,17 @@ const mixedScopeBatch = context.fmeaApi.analyzeElements([
 ]);
 assert.equal(mixedScopeBatch.filter((item) => item.analysisStatus === 'complete').length, 1);
 assert.equal(mixedScopeBatch.filter((item) => item.analysisStatus === 'out-of-scope' && item.result === null).length, 2);
+
+const adasCsvRows = context.fmeaApi.parseCsv([
+  'Element,Element type,Standard,Function,Inputs,Outputs,modes,SG',
+  '感知模块,software,ISO 26262,识别车辆周围目标,摄像头和雷达,目标列表,正常,避免漏检关键障碍物',
+  '规划模块,software,ISO 26262,生成可行驶轨迹,目标和道路信息,规划轨迹,正常,避免生成不可执行轨迹',
+  '控制模块,software,ISO 26262,跟踪规划轨迹,规划轨迹和车辆状态,转向和制动请求,正常,保持车辆稳定控制',
+  '地图模块,software,ISO 26262,提供高精地图信息,地图数据,道路拓扑,正常,避免使用错误地图',
+  '定位模块,software,ISO 26262,融合 GNSS 和 IMU 计算车辆位置,GNSS 和 IMU,车辆位姿,正常,保证定位连续可信'
+].join('\n')).map(context.fmeaApi.normalizeAnalysisElement).filter(Boolean);
+const adasBatchResults = context.fmeaApi.analyzeElements(adasCsvRows);
+assert.equal(adasCsvRows.length, 5);
+assert.equal(adasBatchResults.filter((item) => item.analysisStatus === 'complete' && item.result.rows.length === 9).length, 5);
 
 console.log('FMEA logic tests passed');

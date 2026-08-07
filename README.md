@@ -34,11 +34,11 @@ python -m http.server 4173
 
 ## 分析范围
 
-当前规则引擎只生成汽车系统、汽车电子和车载软件相关 FMEA。手工输入和批量导入都会检查元素名称、功能、输入、输出及安全目标中的汽车领域证据。猴子、香蕉、火车、轨道交通、航空等明确的非汽车对象会被阻止；无法识别车辆、ECU、车载网络、底盘、动力、电池或驾驶相关上下文时，会要求补充信息，不生成 FMEA 结果。批量导入中的超范围元素会单独标记，也不会进入结果导出。
+当前规则引擎只生成汽车系统、汽车电子和车载软件相关 FMEA。手工输入和批量导入都会检查元素名称、功能、输入、输出及安全目标中的汽车领域证据。支持智驾/自动驾驶场景中的感知、规划、控制、地图、定位、传感器融合、目标检测、轨迹规划、高精地图、GNSS/IMU 等模块。猴子、香蕉、火车、轨道交通、航空等明确的非汽车对象会被阻止；无法识别车辆、ECU、车载网络、底盘、动力、电池或驾驶相关上下文时，会要求补充信息，不生成 FMEA 结果。批量导入中的超范围元素会单独标记，也不会进入结果导出。
 
 ## 批量导入
 
-分析工作台的“批量导入元素”支持 JSON 和 CSV。CSV 可以直接使用 `Element,Element type,Standard,Function,Inputs,Outputs,modes,SG` 表头，其中 `Element` 和 `Function` 必填，`modes` 和 `SG` 可留空。字段名匹配不区分大小写、空格、下划线和连字符。导入后系统会一次性完成全部元素的 FMEA 分析，可在批量结果列表中逐项查看，并通过“导出全部”生成合并 CSV。示例见 [`examples/analysis-elements-template.csv`](examples/analysis-elements-template.csv) 和 [`examples/analysis-elements-template.json`](examples/analysis-elements-template.json)。
+分析工作台的“批量导入元素”支持 JSON 和 CSV。CSV 可以直接使用 `Element,Element type,Standard,Function,Inputs,Outputs,modes,SG` 表头，其中 `Element` 和 `Function` 必填，`modes` 和 `SG` 可留空。字段名匹配不区分大小写、空格、下划线和连字符。导入后系统会一次性完成全部元素的 FMEA 分析，可在批量结果列表中逐项查看，并通过“导出全部”生成合并 CSV。示例见 [`examples/analysis-elements-template.csv`](examples/analysis-elements-template.csv)、[`examples/adas-analysis-elements-template.csv`](examples/adas-analysis-elements-template.csv) 和 [`examples/analysis-elements-template.json`](examples/analysis-elements-template.json)。
 
 潜在失效影响采用“直接影响 + 系统后果”的简洁结构；当功能描述较长或输出接口较多时，会提取功能摘要并将接口压缩为“前两项 + 接口总数”。软件安全机制按具体失效模式选择最多两项相关检测/保护机制和一项故障响应，不再为每条失效一次性附加整个机制库。
 

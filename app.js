@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'fmea-studio-knowledge-v1';
 const ANALYSIS_QUEUE_KEY = 'fmea-studio-analysis-queue-v1';
-const ANALYSIS_ENGINE_VERSION = '2.1';
+const ANALYSIS_ENGINE_VERSION = '2.2';
 
 const steps = [
   '检查输入上下文与分析假设',
@@ -36,9 +36,17 @@ const defaultSoftwareScopes = softwareScopeDefinitions.map((scope) => scope.key)
 
 const automotiveScopePatterns = [
   /汽车|车辆|整车|车载|乘用车|商用车|公交车|客车|卡车|货车|摩托车|车速|轮速|车轮|驾驶|乘员|座舱|底盘|转向|制动|油门|动力总成|发动机|变速箱|电驱|电机控制|电池包|充电桩|车门|车灯|雨刮|安全气囊|胎压|泊车|行车/i,
+  /智驾|自动驾驶|辅助驾驶|无人驾驶|环境感知|传感器融合|目标检测|目标跟踪|车道线|障碍物|可行驶区域|路径规划|轨迹规划|行为规划|决策规划|横向控制|纵向控制|运动控制|高精地图|组合导航|融合定位|车辆定位|激光雷达|毫米波雷达|视觉算法|点云/i,
   /\b(vehicle|automotive|car|wheel speed|steering|brake|powertrain|engine|transmission|airbag|cockpit|parking)\b/i,
   /\b(ECU|VCU|BMS|ADAS|ABS|ESC|ESP|EPS|EPB|OBC|TBOX|CAN|LIN|FlexRay|AUTOSAR|ASIL|OBD|UDS)\b/i,
+  /\b(autonomous driving|automated driving|driver assistance|sensor fusion|object detection|object tracking|lane detection|free space|path planning|motion planning|trajectory planning|vehicle control|HD map|GNSS|IMU|LiDAR)\b/i,
+  /\b(NOA|ACC|AEB|LKA|LKS|LDW|APA|AVP|HWA|NCA)\b/i,
   /ISO\s*26262|域控制器|高压配电盒|车载充电机|直流变换器|荷电状态|SOC|扭矩请求|驾驶辅助/i
+];
+
+const intelligentDrivingModulePatterns = [
+  /^(智驾)?(感知|规划|控制|地图|定位)(模块|系统|算法|软件|功能)?$/i,
+  /^(ADAS\s*)?(perception|planning|control|map|localization|localisation)(\s+(module|system|algorithm|software|function))?$/i
 ];
 
 const outOfScopePatterns = [
@@ -217,7 +225,7 @@ function validateAutomotiveContext(data) {
   const context = [data.elementName, data.function, data.inputs, data.outputs, data.modes, data.safetyGoal].map(normalize).filter(Boolean).join(' ');
   const excluded = outOfScopePatterns.find((item) => item.pattern.test(context));
   if (excluded) return { inScope: false, reason: `检测到${excluded.label}“${context.match(excluded.pattern)?.[0] || data.elementName}”，当前分析仅支持汽车系统、汽车电子与车载软件元素。` };
-  const automotiveEvidence = automotiveScopePatterns.flatMap((pattern) => context.match(pattern) || []);
+  const moduleEvidence = intelligentDrivingModulePatterns.flatMap((pattern) => normalize(data.elementName).match(pattern) || []); const automotiveEvidence = [...moduleEvidence, ...automotiveScopePatterns.flatMap((pattern) => context.match(pattern) || [])];
   if (automotiveEvidence.length) return { inScope: true, evidence: [...new Set(automotiveEvidence)].slice(0, 3) };
   return { inScope: false, reason: '未识别到明确的汽车领域上下文。请补充车辆功能、ECU、车载网络、底盘、动力、电池或驾驶相关信息后再分析。' };
 }
