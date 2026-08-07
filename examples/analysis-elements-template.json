@@ -4,6 +4,7 @@
       "elementName": "转向角度估算模块",
       "elementType": "software",
       "standard": "ISO 26262",
+      "softwareScopes": ["communication", "timing", "plausibility", "range", "consistency"],
       "function": "根据传感器信号估算转向角度",
       "inputs": "方向盘角度、车速",
       "outputs": "估算转向角度",

@@ -1,0 +1,3 @@
+Element,Element type,Standard,Function,Inputs,Outputs,modes,SG
+Vehicle speed calculation module,software,ISO 26262,Calculate vehicle speed from wheel-speed signals,Wheel-speed signals and timestamps,Vehicle speed and validity status,,
+Battery management system,system,AIAG / VDA,Monitor battery status and trigger protection,Cell voltage temperature and current,SOC power limits and fault warnings,Normal / degraded / shutdown,Prevent overcharge over-discharge and thermal runaway

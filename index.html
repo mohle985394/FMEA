@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#102b2b" />
     <title>FMEA Studio | 智能失效模式分析</title>
-    <link rel="stylesheet" href="styles.css?v=20260806-3" />
+    <link rel="stylesheet" href="styles.css?v=20260807-5" />
   </head>
   <body>
     <div class="app-shell">
@@ -55,20 +55,34 @@
 
             <div class="sample-row"><span>快速开始</span><button class="sample-btn" type="button" data-sample="software">软件示例 · 车速计算模块</button><button class="sample-btn" type="button" data-sample="system">系统示例 · 电池管理系统</button><span class="sample-hint">批量导入支持 JSON / CSV</span></div>
 
-            <section id="analysisQueuePanel" class="analysis-queue hidden" aria-label="待分析元素队列">
-              <div class="analysis-queue-head"><div><span class="section-kicker">IMPORT QUEUE</span><strong>待分析元素 <span id="analysisQueueCount">0</span></strong></div><div class="queue-actions"><button id="analysisQueueClear" class="text-btn" type="button">清空队列</button></div></div>
+            <section id="analysisQueuePanel" class="analysis-queue hidden" aria-label="批量分析结果">
+              <div class="analysis-queue-head"><div><span class="section-kicker">BATCH ANALYSIS</span><strong>批量元素 <span id="analysisQueueCount">0</span> · 已完成 <span id="analysisQueueCompleted">0</span> · 超出范围 <span id="analysisQueueRejected">0</span></strong></div><div class="queue-actions"><button id="analysisQueueClear" class="text-btn" type="button">清空队列</button></div></div>
               <div id="analysisQueueList" class="analysis-queue-list"></div>
-              <p class="queue-hint">选择“载入”后可复用当前表单上下文，再生成对应的 FMEA 分析。</p>
+              <p class="queue-hint">导入后自动完成全部元素分析；选择“查看结果”可逐项审核。</p>
             </section>
 
             <form id="fmeaForm">
               <label class="field-label" for="elementName">系统 / 软件元素 <span>*</span></label>
               <input id="elementName" name="elementName" type="text" placeholder="例如：车速计算模块" required />
+              <div id="domainScopeWarning" class="domain-scope-warning hidden" role="alert"></div>
 
               <div class="two-col">
                 <div><label class="field-label" for="elementType">元素类型</label><select id="elementType" name="elementType"><option value="software">软件元素</option><option value="system">系统元素</option><option value="hardware">硬件组件</option></select></div>
                 <div><label class="field-label" for="standard">分析标准</label><select id="standard" name="standard"><option>IEC 60812</option><option>AIAG / VDA</option><option>ISO 26262</option></select></div>
               </div>
+
+              <fieldset id="softwareScopeField" class="software-scope-field">
+                <legend>软件分析维度 <span>*</span></legend>
+                <div class="software-scope-options">
+                  <label class="scope-option"><input type="checkbox" name="softwareScope" value="storage" checked /><span>存储</span></label>
+                  <label class="scope-option"><input type="checkbox" name="softwareScope" value="communication" checked /><span>通信</span></label>
+                  <label class="scope-option"><input type="checkbox" name="softwareScope" value="timing" checked /><span>时序和执行</span></label>
+                  <label class="scope-option"><input type="checkbox" name="softwareScope" value="plausibility" checked /><span>合理性</span></label>
+                  <label class="scope-option"><input type="checkbox" name="softwareScope" value="range" checked /><span>范围检测</span></label>
+                  <label class="scope-option"><input type="checkbox" name="softwareScope" value="consistency" checked /><span>一致性</span></label>
+                </div>
+                <div id="softwareScopeSummary" class="software-scope-summary">已选择 6 个维度 · 覆盖 9 个软件失效模式</div>
+              </fieldset>
 
               <label class="field-label" for="function">主要功能 <span>*</span></label>
               <textarea id="function" name="function" rows="2" placeholder="描述元素应完成的功能，例如：基于轮速信号计算车辆当前速度"></textarea>
@@ -101,11 +115,12 @@
             </div>
 
             <div id="resultState" class="result-state hidden">
-              <div class="result-header"><div><span class="section-kicker">ANALYSIS RESULT</span><h2 id="resultTitle">车速计算模块</h2><div class="result-meta"><span id="resultType">软件元素</span><span>·</span><span id="resultStandard">IEC 60812</span><span>·</span><span id="resultTime">刚刚生成</span></div></div><div class="result-status"><span class="status-dot"></span>草稿 · 待审核</div></div>
+              <div id="batchResultNav" class="batch-result-nav hidden"><button id="batchPrevBtn" class="icon-btn" type="button" title="上一个分析结果" aria-label="上一个分析结果">←</button><select id="batchResultSelect" aria-label="选择批量分析结果"></select><button id="batchNextBtn" class="icon-btn" type="button" title="下一个分析结果" aria-label="下一个分析结果">→</button></div>
+              <div class="result-header"><div><span class="section-kicker">ANALYSIS RESULT</span><h2 id="resultTitle">车速计算模块</h2><div class="result-meta"><span id="resultType">软件元素</span><span>·</span><span id="resultStandard">IEC 60812</span><span>·</span><span id="resultModeSet">软件模式集</span><span>·</span><span id="resultTime">刚刚生成</span></div></div><div class="result-status"><span class="status-dot"></span>草稿 · 待审核</div></div>
               <div class="metric-strip"><div class="metric"><span>分析功能</span><strong id="metricFunctions">1</strong></div><div class="metric"><span>失效模式</span><strong id="metricModes">0</strong></div><div class="metric"><span>高风险项</span><strong id="metricHigh">0</strong></div><div class="metric"><span>平均 RPN</span><strong id="metricRpn">0</strong></div></div>
               <div class="tabs"><button class="tab active" data-tab="table" type="button">FMEA 表格 <span id="tableCount">0</span></button><button class="tab" data-tab="overview" type="button">风险概览</button><button class="tab" data-tab="basis" type="button">分析依据</button></div>
 
-              <div id="tableTab" class="tab-panel"><div class="table-toolbar"><div id="analysisCoverageText" class="toolbar-caption"><span class="filter-icon">≡</span> 已应用 8 个适用失效引导词</div><button id="copyBtn" class="mini-btn" type="button"><span>□</span> 复制 JSON</button></div><div class="table-wrap"><table><thead><tr><th class="col-id">ID</th><th class="col-mode">潜在失效模式</th><th class="col-cause">潜在失效原因</th><th class="col-effect">潜在失效影响</th><th class="col-control">安全措施 / 机制</th><th class="col-score">S</th><th class="col-score">O</th><th class="col-score">D</th><th class="col-rpn">RPN</th><th>状态</th></tr></thead><tbody id="fmeaBody"></tbody></table></div></div>
+              <div id="tableTab" class="tab-panel"><div class="table-toolbar"><div id="analysisCoverageText" class="toolbar-caption"><span class="filter-icon">≡</span> 将根据元素类型选择失效模式集</div><button id="copyBtn" class="mini-btn" type="button"><span>□</span> 复制 JSON</button></div><div class="table-wrap"><table><thead><tr><th class="col-id">ID</th><th class="col-mode">潜在失效模式</th><th class="col-cause">潜在失效原因</th><th class="col-effect">潜在失效影响</th><th class="col-control">安全措施 / 机制</th><th class="col-score">S</th><th class="col-score">O</th><th class="col-score">D</th><th class="col-rpn">RPN</th><th>状态</th></tr></thead><tbody id="fmeaBody"></tbody></table></div></div>
               <div id="overviewTab" class="tab-panel hidden"><div class="overview-grid"><div class="overview-block"><div class="overview-title"><span class="section-kicker">RISK DISTRIBUTION</span><h3>风险分布</h3></div><div id="riskBars" class="risk-bars"></div></div><div class="overview-block"><div class="overview-title"><span class="section-kicker">COVERAGE</span><h3>安全机制覆盖</h3></div><div class="coverage-score"><strong id="coverageValue">0%</strong><span>失效原因已关联至少一项控制措施</span></div><div class="coverage-track"><div id="coverageBar"></div></div><div id="coverageHint" class="muted-text"></div></div></div><div class="high-risk-list"><div class="overview-title"><span class="section-kicker">ATTENTION</span><h3>优先关注</h3></div><div id="highRiskList"></div></div></div>
               <div id="basisTab" class="tab-panel hidden"><div class="basis-grid"><div><span class="section-kicker">CONTEXT SNAPSHOT</span><h3>输入上下文</h3><dl id="contextList"></dl></div><div><span class="section-kicker">ASSUMPTIONS</span><h3>分析假设与提醒</h3><ul id="assumptionList" class="assumption-list"></ul></div></div></div>
             </div>
@@ -195,6 +210,6 @@
         </div>
       </main>
     </div>
-    <script src="app.js?v=20260806-3"></script>
+    <script src="app.js?v=20260807-5"></script>
   </body>
 </html>
